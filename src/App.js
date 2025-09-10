@@ -126,12 +126,12 @@ export default function App() {
   };
 
   const requestSettlement = () => {
-  const finalPrices = {};
-  Object.keys(marketSettings).forEach(market => {
-    finalPrices[market] = parseFloat(tempPrices[market]) || marketSettings[market].apy;
-  });
-  setPendingSettlement({ prices: finalPrices });
-};
+    const initialPrices = {};
+    Object.keys(marketSettings).forEach(market => {
+      initialPrices[market] = marketSettings[market].apy;
+    });
+    setPendingSettlement({ prices: initialPrices });
+  };
 
   const confirmSettlement = () => {
     setSettlementPrices(pendingSettlement.prices);
@@ -274,7 +274,7 @@ export default function App() {
               position: 'relative',
               transition: 'all 0.3s ease'
             }}>
-              betAPY
+              Slope Betting
             </h1>
             <div style={{
               fontSize: '0.65rem',
@@ -1181,12 +1181,10 @@ export default function App() {
                           backdropFilter: 'blur(8px)',
                           fontSize: '0.85rem'
                         }}
-                       const [tempPrices, setTempPrices] = useState({});
                         onChange={(e) => {
-                          setTempPrices(prev => ({
-                            ...prev,
-                            [market]: e.target.value
-                          }));
+                          const updated = { ...pendingSettlement?.prices || {} };
+                          updated[market] = parseFloat(e.target.value) || marketSettings[market].apy;
+                          setPendingSettlement({ prices: updated });
                         }}
                         onFocus={(e) => {
                           e.target.style.borderColor = '#10b981';
