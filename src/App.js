@@ -85,18 +85,53 @@ export default function App() {
   };
 
   const placeBet = (direction) => {
-    if (betAmount > userBalance) {
-      showToast('Insufficient balance!', 'error');
-      return;
-    }
-    if (betAmount < 100) {
-      showToast('Minimum bet is $100', 'error');
-      return;
-    }
-    if (isSettlement) {
-      showToast('Cannot place bets during settlement', 'error');
-      return;
-    }
+  if (betAmount > userBalance) {
+    showToast('Insufficient balance!', 'error');
+    return;
+  }
+  if (betAmount < 10) {
+    showToast('Minimum bet is $10', 'error');
+    return;
+  }
+  
+  // Calculate betting limits based on treasury
+  const maxPerBet = protocolTreasury * 0.1; // 10% of treasury per bet
+  const maxPerMarket = protocolTreasury * 0.1; // 10% of treasury per market
+  const maxAllMarkets = protocolTreasury * 0.2; // 20% of treasury across all markets
+  
+  if (betAmount > maxPerBet) {
+    showToast(`Maximum bet size is $${maxPerBet.toLocaleString()} (10% of treasury)`, 'error');
+    return;
+  }
+  
+  // Check total exposure on this market
+  const currentMarketExposure = activeBets
+    .filter(bet => bet.market === selectedMarket && bet.status === 'active')
+    .reduce((sum, bet) => sum + bet.amount, 0);
+  
+  if (currentMarketExposure + betAmount > maxPerMarket) {
+    const remainingMarketLimit = maxPerMarket - currentMarketExposure;
+    showToast(`Market exposure limit: $${remainingMarketLimit.toLocaleString()} remaining on ${selectedMarket}`, 'error');
+    return;
+  }
+  
+  // Check total exposure across all markets
+  const totalExposure = activeBets
+    .filter(bet => bet.status === 'active')
+    .reduce((sum, bet) => sum + bet.amount, 0);
+  
+  if (totalExposure + betAmount > maxAllMarkets) {
+    const remainingTotalLimit = maxAllMarkets - totalExposure;
+    showToast(`Total exposure limit: $${remainingTotalLimit.toLocaleString()} remaining across all markets`, 'error');
+    return;
+  }
+  
+  if (isSettlement) {
+    showToast('Cannot place bets during settlement', 'error');
+    return;
+  }
+
+  // Rest of the placeBet function continues unchanged...
 
     const currentPrice = marketSettings[selectedMarket].apy;
     let executionPrice;
