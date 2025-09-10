@@ -100,7 +100,7 @@ export default function App() {
   const maxAllMarkets = protocolTreasury * 0.2; // 20% of treasury across all markets
   
   if (betAmount > maxPerBet) {
-    showToast(`Maximum bet size is $${maxPerBet.toLocaleString()} (10% of treasury)`, 'error');
+    showToast(`Maximum bet size is $${maxPerBet.toLocaleString()}`, 'error');
     return;
   }
   
