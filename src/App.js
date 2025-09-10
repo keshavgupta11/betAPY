@@ -210,78 +210,50 @@ export default function App() {
   };
 
   const confirmSettlement = () => {
-  setSettlementPrices(pendingSettlement.prices);
-  setIsSettlement(true);
-  
-  let totalUserWinnings = 0;
-  
-  const updatedBets = activeBets.map(bet => {
-    // Only settle bets that are still active, skip already settled ones
-    if (bet.status !== 'active') {
-      return bet; // Return unchanged if already settled
-    }
+    setSettlementPrices(pendingSettlement.prices);
+    setIsSettlement(true);
     
-    const settlementPrice = pendingSettlement.prices[bet.market];
-    const isWinner = 
-      (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
-      (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
+    let totalUserWinnings = 0;
     
-    if (bet.mode === 'peer') {
-      // P2P betting logic
-      if (isWinner) {
-        // For P2P: House takes 10% cut from the bet amount, user gets bet + 90%
-        const houseCut = bet.amount * 0.1;
-        const userWinnings = bet.amount + (bet.amount * 0.9);
-        totalUserWinnings += userWinnings;
-        
-        // Add house cut to treasury
-        setProtocolTreasury(prev => prev + houseCut);
-        
-        return { ...bet, status: 'won', settlementPrice };
-      } else {
-        // User loses, but treasury doesn't gain anything (other user won)
-        return { ...bet, status: 'lost', settlementPrice };
+    const updatedBets = activeBets.map(bet => {
+      // Only settle bets that are still active, skip already settled ones
+      if (bet.status !== 'active') {
+        return bet; // Return unchanged if already settled
       }
-    } else {
-      // House betting logic (existing code)
-      if (isWinner) {
-        totalUserWinnings += bet.amount + bet.potentialWin;
-        return { ...bet, status: 'won', settlementPrice };
+      
+      const settlementPrice = pendingSettlement.prices[bet.market];
+      const isWinner = 
+        (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
+        (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
+      
+      if (bet.mode === 'peer') {
+        // P2P betting logic
+        if (isWinner) {
+          // For P2P: User gets back original bet + 90% profit
+          // Total payout is original bet + 90% profit = bet.amount * 1.9
+          const totalPayout = bet.amount + (bet.amount * 0.9); // $1000 + $900 = $1900
+          const houseCut = bet.amount * 0.1; // $100 goes to house
+          
+          totalUserWinnings += totalPayout;
+          
+          // Add house cut to treasury
+          setProtocolTreasury(prev => prev + houseCut);
+          
+          return { ...bet, status: 'won', settlementPrice };
+        } else {
+          // User loses, but treasury doesn't gain anything (other user won)
+          return { ...bet, status: 'lost', settlementPrice };
+        }
       } else {
-        return { ...bet, status: 'lost', settlementPrice };
+        // House betting logic (existing code)
+        if (isWinner) {
+          totalUserWinnings += bet.amount + bet.potentialWin;
+          return { ...bet, status: 'won', settlementPrice };
+        } else {
+          return { ...bet, status: 'lost', settlementPrice };
+        }
       }
-    }
-  });
-  
-  // Update user balance with their winnings
-  setUserBalance(prev => prev + totalUserWinnings);
-  
-  // Calculate treasury changes for house bets only
-  const houseBets = activeBets.filter(bet => bet.mode === 'house' && bet.status === 'active');
-  
-  const houseLosses = houseBets.filter(bet => {
-    const settlementPrice = pendingSettlement.prices[bet.market];
-    const isWinner = 
-      (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
-      (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
-    return !isWinner;
-  }).reduce((sum, bet) => sum + bet.amount, 0);
-
-  const houseWinnerPayouts = houseBets.filter(bet => {
-    const settlementPrice = pendingSettlement.prices[bet.market];
-    const isWinner = 
-      (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
-      (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
-    return isWinner;
-  }).reduce((sum, bet) => sum + bet.amount + bet.potentialWin, 0);
-
-  // Update treasury for house bets: gain from losses, lose from payouts
-  setProtocolTreasury(prev => prev + houseLosses - houseWinnerPayouts);
-  
-  setActiveBets(updatedBets);
-  setPendingSettlement(null);
-  showToast('Settlement completed!', 'success');
-};
+    });
     
     // Update user balance with their winnings
     setUserBalance(prev => prev + totalUserWinnings);
