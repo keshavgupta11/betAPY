@@ -126,12 +126,13 @@ export default function App() {
   };
 
   const requestSettlement = () => {
-    const initialPrices = {};
-    Object.keys(marketSettings).forEach(market => {
-      initialPrices[market] = marketSettings[market].apy;
-    });
-    setPendingSettlement({ prices: initialPrices });
-  };
+  const initialPrices = {};
+  Object.keys(marketSettings).forEach(market => {
+    const input = document.querySelector(`input[data-market="${market}"]`);
+    initialPrices[market] = parseFloat(input?.value) || marketSettings[market].apy;
+  });
+  setPendingSettlement({ prices: initialPrices });
+};
 
   const confirmSettlement = () => {
     setSettlementPrices(pendingSettlement.prices);
@@ -1182,9 +1183,6 @@ export default function App() {
                           fontSize: '0.85rem'
                         }}
                         onChange={(e) => {
-                          const updated = { ...pendingSettlement?.prices || {} };
-                          updated[market] = parseFloat(e.target.value) || marketSettings[market].apy;
-                          setPendingSettlement({ prices: updated });
                         }}
                         onFocus={(e) => {
                           e.target.style.borderColor = '#10b981';
