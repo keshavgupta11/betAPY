@@ -229,9 +229,9 @@ export default function App() {
       if (bet.mode === 'peer') {
         // P2P betting logic
         if (isWinner) {
-          // For P2P: House takes 10% cut from winnings, rest goes to user
-          const houseCut = bet.potentialWin * 0.1;
-          const userWinnings = bet.amount + (bet.potentialWin * 0.9);
+          // For P2P: House takes 10% cut from the bet amount, user gets bet + 90%
+          const houseCut = bet.amount * 0.1;
+          const userWinnings = bet.amount + (bet.amount * 0.9);
           totalUserWinnings += userWinnings;
           
           // Add house cut to treasury
@@ -252,6 +252,36 @@ export default function App() {
         }
       }
     });
+    
+    // Update user balance with their winnings
+    setUserBalance(prev => prev + totalUserWinnings);
+    
+    // Calculate treasury changes for house bets only
+    const houseBets = activeBets.filter(bet => bet.mode === 'house' && bet.status === 'active');
+    
+    const houseLosses = houseBets.filter(bet => {
+      const settlementPrice = pendingSettlement.prices[bet.market];
+      const isWinner = 
+        (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
+        (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
+      return !isWinner;
+    }).reduce((sum, bet) => sum + bet.amount, 0);
+
+    const houseWinnerPayouts = houseBets.filter(bet => {
+      const settlementPrice = pendingSettlement.prices[bet.market];
+      const isWinner = 
+        (bet.direction === 'higher' && settlementPrice > bet.executionPrice) ||
+        (bet.direction === 'lower' && settlementPrice < bet.executionPrice);
+      return isWinner;
+    }).reduce((sum, bet) => sum + bet.amount + bet.potentialWin, 0);
+
+    // Update treasury for house bets: gain from losses, lose from payouts
+    setProtocolTreasury(prev => prev + houseLosses - houseWinnerPayouts);
+    
+    setActiveBets(updatedBets);
+    setPendingSettlement(null);
+    showToast('Settlement completed!', 'success');
+  };
     
     // Update user balance with their winnings
     setUserBalance(prev => prev + totalUserWinnings);
