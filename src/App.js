@@ -402,7 +402,7 @@ export default function App() {
               position: 'relative',
               transition: 'all 0.3s ease'
             }}>
-              Crypto Rate Prediction
+              DeFi Yield Prediction
             </div>
           </div>
           <nav style={{ display: 'flex', gap: '1.5rem' }}>
