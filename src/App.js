@@ -274,7 +274,7 @@ export default function App() {
               position: 'relative',
               transition: 'all 0.3s ease'
             }}>
-              Slope Betting
+              betAPY
             </h1>
             <div style={{
               fontSize: '0.65rem',
